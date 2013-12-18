@@ -301,17 +301,9 @@ public class TransPass2 extends Tree.Visitor {
 	@Override
 	public void visitForLoop(Tree.ForLoop forLoop) {
 		// TODO: 参考visitWhileLoop
-		if(forLoop.init != null) {
-			forLoop.init.accept(this);
-		}
-		Label condition = Label.createLabel();
+		forLoop.init.accept(this);
 		Label loop = Label.createLabel();
-		tr.genMark(condition);
 		tr.genMark(loop);
-		if(forLoop.update != null) {
-			forLoop.update.accept(this);
-		}
-		tr.genMark(condition);
 		forLoop.condition.accept(this);
 		Label exit = Label.createLabel();
 		tr.genBeqz(forLoop.condition.val, exit);
@@ -319,11 +311,30 @@ public class TransPass2 extends Tree.Visitor {
 		if (forLoop.loopBody != null) {
 			forLoop.loopBody.accept(this);
 		}
+		if(forLoop.update != null) {
+			forLoop.update.accept(this);
+		}
 		tr.genBranch(loop);
 		loopExits.pop();
 		tr.genMark(exit);
 	}
 
+	@Override
+	public void visitRepeatLoop(Tree.RepeatLoop repeatLoop) {
+		Label loop = Label.createLabel();
+		tr.genMark(loop);
+		Label exit = Label.createLabel();
+		loopExits.push(exit);
+		if(repeatLoop.loopBody != null) {
+			repeatLoop.loopBody.accept(this);
+		}
+		
+		repeatLoop.condition.accept(this);
+		tr.genBeqz(repeatLoop.condition.val, loop);
+		loopExits.pop();
+		tr.genMark(exit);
+	}
+	
 	@Override
 	public void visitIf(Tree.If ifStmt) {
 		ifStmt.condition.accept(this);
